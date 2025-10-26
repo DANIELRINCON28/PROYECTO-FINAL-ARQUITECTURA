@@ -13,7 +13,7 @@ Sistema de software para optimizar los procesos logísticos y administrativos de
 Este proyecto implementa una **Arquitectura Hexagonal (Puertos y Adaptadores)** con estricta separación de responsabilidades:
 
 
-```
+
 ┌─────────────────────────────────────────────────────────┐
 │                  ADAPTADORES CONDUCTORES                │
 │                  (Driving Adapters)                     │
@@ -55,7 +55,7 @@ Este proyecto implementa una **Arquitectura Hexagonal (Puertos y Adaptadores)** 
 │              │ SQLite Repository    │                   │
 │              └──────────────────────┘                   │
 └─────────────────────────────────────────────────────────┘
-```
+
 
 
 ### Principios Aplicados
@@ -75,7 +75,7 @@ Este proyecto implementa una **Arquitectura Hexagonal (Puertos y Adaptadores)** 
 ## Estructura del Proyecto
 
 
-```
+
 yedistribuciones_project/
 ├── src/
 │   ├── domain/                    # Núcleo de negocio (El Hexágono)
@@ -100,7 +100,7 @@ yedistribuciones_project/
 ├── main.py                        # Punto de entrada y DI
 ├── requirements.txt               # Dependencias
 └── README.md                      # Este archivo
-```
+
 
 
 ## Stack Tecnológico
@@ -150,16 +150,16 @@ yedistribuciones_project/
 2. **Crear entorno virtual (recomendado)**
 
 
-```powershell
+powershell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-```
+
 
 3. **Instalar dependencias**
 
-```powershell
+powershell
 pip install -r requirements.txt
-```
+
 
 
 ## Ejecución
@@ -168,9 +168,8 @@ pip install -r requirements.txt
 Para iniciar la aplicación:
 
 
-```powershell
+powershell
 streamlit run main.py
-```
 
 
 La aplicación se abrirá automáticamente en tu navegador en `http://localhost:8501`
@@ -240,17 +239,17 @@ La aplicación se abrirá automáticamente en tu navegador en `http://localhost:
 Para ejecutar las pruebas (cuando estén implementadas):
 
 
-```powershell
+powershell
 pytest tests/
-```
+
 
 
 Para verificar cobertura:
 
 
-```powershell
+powershell
 pytest --cov=src tests/
-```
+
 
 
 ## Validación de Tipos
@@ -259,9 +258,9 @@ pytest --cov=src tests/
 Para validar el tipado estático:
 
 
-```powershell
+powershell
 mypy src/
-```
+
 
 
 ## Base de Datos
@@ -285,17 +284,18 @@ La base de datos SQLite (`yedistribuciones.db`) se crea automáticamente al inic
 ## Arquitectura Hexagonal - Flujo de Dependencias
 
 
-```
+
 UI (Streamlit) → RouteService → RouteRepositoryPort ← SqliteRouteRepository
                       ↓
                  Route (Domain)
-```
+
 
 **Importante**: El dominio NO conoce la infraestructura. La inversión de dependencias se logra mediante el puerto `RouteRepositoryPort`.
 
+
 ## Principio de Inversión de Dependencias (DIP)
 
-```python
+python
 # ❌ INCORRECTO - Dependencia directa
 class RouteService:
     def __init__(self):
@@ -305,7 +305,7 @@ class RouteService:
 class RouteService:
     def __init__(self, repository: RouteRepositoryPort):
         self._repository = repository  # Depende de abstracción
-```
+
 
 ## Autor
 
@@ -317,4 +317,5 @@ Proyecto educativo - Uso académico.
 #   P R O Y E C T O - F I N A L - A R Q U I T E C T U R A 
  
  
+
 

@@ -1,0 +1,14 @@
+# Yedistribuciones - Gestión de Rutas
+# Dependencias del proyecto
+
+# Framework de UI
+streamlit==1.31.0
+
+# No se requieren dependencias adicionales para SQLite (viene incluido en Python)
+# No se requiere SQLAlchemy ya que usamos sqlite3 nativo
+
+# Dependencias de desarrollo (opcional)
+pytest==7.4.3
+pytest-cov==4.1.0
+black==23.12.1
+mypy==1.8.0

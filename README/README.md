@@ -242,5 +242,6 @@ Proyecto desarrollado como parte del curso de Arquitectura de Sistemas.
 ## Licencia
 
 Proyecto educativo - Uso académico.
-#   P R O Y E C T O - F I N A L - A R Q U I T E C T U R A  
+#   P R O Y E C T O - F I N A L - A R Q U I T E C T U R A 
+ 
  

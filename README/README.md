@@ -1,18 +1,11 @@
-# 🚚 Yedistribuciones - Sistema de Gestión de Rutas
+🚚 Yedistribuciones - Sistema de Gestión de Rutas
+📘 Descripción del Proyecto
 
+Sistema de software para optimizar los procesos logísticos y administrativos de Yedistribuciones, implementando el módulo central de Gestión de Rutas.
 
-## Descripción del Proyecto
+🧩 Arquitectura
 
-
-Sistema de software para optimizar los procesos logísticos y administrativos de Yedistribuciones, implementando el módulo central de **Gestión de Rutas**.
-
-
-## Arquitectura
-
-
-Este proyecto implementa una **Arquitectura Hexagonal (Puertos y Adaptadores)** con estricta separación de responsabilidades:
-
-
+El proyecto implementa una Arquitectura Hexagonal (Puertos y Adaptadores) con estricta separación de responsabilidades.
 
 ┌─────────────────────────────────────────────────────────┐
 │                  ADAPTADORES CONDUCTORES                │
@@ -56,246 +49,165 @@ Este proyecto implementa una **Arquitectura Hexagonal (Puertos y Adaptadores)** 
 │              └──────────────────────┘                   │
 └─────────────────────────────────────────────────────────┘
 
+⚙️ Principios Aplicados
 
+SOLID – Inversión de Dependencias (DIP)
 
-### Principios Aplicados
+DRY – Don't Repeat Yourself
 
+KISS – Keep It Simple, Stupid
 
-- **SOLID**: Especialmente Inversión de Dependencias (DIP)
-  
-- **DRY**: Don't Repeat Yourself
-  
-- **KISS**: Keep It Simple, Stupid
-  
-- **Separación de Conceptos**: Cada capa con responsabilidad única
-  
-- **Alta Cohesión y Bajo Acoplamiento**
-  
+Separación de Conceptos – Cada capa tiene una única responsabilidad
 
-## Estructura del Proyecto
+Alta Cohesión y Bajo Acoplamiento
 
-
-
+🧱 Estructura del Proyecto
 yedistribuciones_project/
 ├── src/
 │   ├── domain/                    # Núcleo de negocio (El Hexágono)
-│   │   ├── models/                # Entidades del dominio
-│   │   │   ├── route.py          # Modelo Route con lógica de negocio
-│   │   │   └── client.py         # Modelo Client
-│   │   └── ports/                 # Puertos de salida (interfaces)
+│   │   ├── models/
+│   │   │   ├── route.py           # Modelo Route con lógica de negocio
+│   │   │   └── client.py          # Modelo Client
+│   │   └── ports/
 │   │       └── route_repository_port.py
 │   │
-│   ├── application/               # Lógica de aplicación (Casos de Uso)
+│   ├── application/               # Casos de Uso
 │   │   ├── services/
-│   │   │   └── route_service.py  # Orquestación de casos de uso
-│   │   └── dtos.py               # Data Transfer Objects
+│   │   │   └── route_service.py
+│   │   └── dtos.py
 │   │
-│   └── infrastructure/            # Implementaciones tecnológicas
-│       ├── persistence/           # Adaptadores de BD (Conducidos)
+│   └── infrastructure/
+│       ├── persistence/
 │       │   └── sqlite_route_repository.py
-│       └── ui/                    # Adaptadores de UI (Conductores)
+│       └── ui/
 │           └── streamlit_app.py
 │
-├── tests/                         # Pruebas
-├── main.py                        # Punto de entrada y DI
-├── requirements.txt               # Dependencias
-└── README.md                      # Este archivo
+├── tests/
+├── main.py
+├── requirements.txt
+└── README.md
 
+🧰 Stack Tecnológico
 
+Lenguaje: Python 3.9+
 
-## Stack Tecnológico
+Framework UI: Streamlit
 
+Base de Datos: SQLite
 
-- **Lenguaje**: Python 3.9+
-  
-- **Framework de UI**: Streamlit
-  
-- **Base de Datos**: SQLite
-  
-- **Type Hints**: Tipado estático completo
-  
+Tipado: Type Hints (mypy compatible)
 
-## Requisitos Funcionales Implementados
+✅ Requisitos Funcionales Implementados
+Código	Descripción	Estado
+RF-RUT-01	Crear nueva ruta	✅
+RF-RUT-02	Asignar clientes a rutas	✅
+RF-RUT-03	Reordenar clientes en rutas	✅
+RF-RUT-04	Visualizar todas las rutas	✅
+RF-RUT-06	Dividir ruta en dos	✅
+RF-RUT-07	Fusionar dos rutas	✅
+⚡ Requisitos No Funcionales
 
+RNF-RUT-01: ✅ Interfaz simple e intuitiva (Streamlit)
 
-- **RF-RUT-01**: ✅ Crear nueva ruta
-  
-- **RF-RUT-02**: ✅ Asignar clientes a rutas
-  
-- **RF-RUT-03**: ✅ Reordenar clientes en rutas
-  
-- **RF-RUT-04**: ✅ Visualizar todas las rutas
-  
-- **RF-RUT-06**: ✅ Dividir ruta en dos
-  
-- **RF-RUT-07**: ✅ Fusionar dos rutas
-  
+RNF-RUT-02: ✅ Tiempo de respuesta < 2 segundos (índices en BD)
 
-## Requisitos No Funcionales
+RNF-RUT-03: ✅ Integridad transaccional (transacciones SQLite)
 
+🛠️ Instalación
+1. Clonar el repositorio
+git clone https://github.com/<usuario>/yedistribuciones.git
+cd yedistribuciones
 
-- **RNF-RUT-01**: ✅ Interfaz simple e intuitiva (Streamlit)
-  
-- **RNF-RUT-02**: ✅ Respuesta < 2 segundos (índices en BD)
-  
-- **RNF-RUT-03**: ✅ Integridad transaccional (transacciones SQLite)
-  
-
-## Instalación
-
-
-1. **Clonar o descargar el proyecto**
-
-
-2. **Crear entorno virtual (recomendado)**
-
-
-powershell
+2. Crear entorno virtual
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 
-
-3. **Instalar dependencias**
-
-powershell
+3. Instalar dependencias
 pip install -r requirements.txt
 
+▶️ Ejecución
 
+Iniciar la aplicación:
 
-## Ejecución
-
-
-Para iniciar la aplicación:
-
-
-powershell
 streamlit run main.py
 
 
-La aplicación se abrirá automáticamente en tu navegador en `http://localhost:8501`
+Abrirá automáticamente http://localhost:8501.
 
+🧭 Uso de la Aplicación
+➕ Crear Nueva Ruta
 
-## Uso de la Aplicación
+Ir a "Crear Nueva Ruta"
 
+Completar el formulario:
 
-### Crear una Nueva Ruta
+Nombre de la ruta
 
+CEDIS
 
-1. Ir a **"➕ Crear Nueva Ruta"**
-   
-2. Completar el formulario:
-   - Nombre de la ruta
-     
-   - CEDIS
-     
-   - Día de la semana
-     
-3. Hacer clic en **"✅ Crear Ruta"**
+Día de la semana
 
+Clic en "Crear Ruta"
 
-### Gestionar Clientes
+✏️ Gestionar Clientes
 
+Ir a "Gestionar Clientes en Ruta"
 
-1. Ir a **"✏️ Gestionar Clientes en Ruta"**
-   
-2. Seleccionar una ruta
-   
-3. Opciones disponibles:
-   
-   - Agregar cliente
-     
-   - Eliminar cliente
-     
-   - Reordenar clientes
+Seleccionar una ruta
 
+Acciones: agregar, eliminar o reordenar clientes
 
-### Dividir una Ruta
+✂️ Dividir Ruta
 
-1. Ir a **"✂️ Dividir Ruta"**
-   
-2. Seleccionar la ruta a dividir
-   
-3. Elegir el punto de división
+Seleccionar ruta
 
-4. Asignar nombres a las nuevas rutas
- 
-5. Confirmar la división
+Elegir punto de división
 
+Asignar nombres y confirmar
 
-### Fusionar Rutas
+🔗 Fusionar Rutas
 
+Seleccionar dos rutas compatibles
 
-1. Ir a **"🔗 Fusionar Rutas"**
-  
-2. Seleccionar dos rutas compatibles (mismo CEDIS y día)
-  
-3. Asignar nombre a la ruta fusionada
-  
-4. Confirmar la fusión
+Asignar nombre y confirmar
 
-## Testing
+🧪 Testing
 
+Ejecutar pruebas:
 
-Para ejecutar las pruebas (cuando estén implementadas):
-
-
-powershell
 pytest tests/
 
 
+Con cobertura:
 
-Para verificar cobertura:
-
-
-powershell
 pytest --cov=src tests/
 
-
-
-## Validación de Tipos
-
-
-Para validar el tipado estático:
-
-
-powershell
+🧾 Validación de Tipos
 mypy src/
 
+💾 Base de Datos
 
+El archivo yedistribuciones.db se crea automáticamente al iniciar la app.
 
-## Base de Datos
-
-
-La base de datos SQLite (`yedistribuciones.db`) se crea automáticamente al iniciar la aplicación por primera vez en el directorio raíz del proyecto.
-
-
-### Esquema
-
-**Tabla `routes`:**
-- `id` (TEXT, PRIMARY KEY)
-- `name` (TEXT)
-- `cedis_id` (TEXT)
-- `day_of_week` (TEXT)
-- `client_ids` (TEXT, JSON)
-- `is_active` (INTEGER, 1/0)
-- `created_at` (TIMESTAMP)
-- `updated_at` (TIMESTAMP)
-
-## Arquitectura Hexagonal - Flujo de Dependencias
-
-
-
+Esquema
+Campo	Tipo	Descripción
+id	TEXT	Primary Key
+name	TEXT	Nombre de la ruta
+cedis_id	TEXT	Identificador del CEDIS
+day_of_week	TEXT	Día asignado
+client_ids	TEXT (JSON)	Clientes asociados
+is_active	INTEGER	1 = activa
+created_at	TIMESTAMP	Creación
+updated_at	TIMESTAMP	Actualización
+🧭 Flujo de Dependencias
 UI (Streamlit) → RouteService → RouteRepositoryPort ← SqliteRouteRepository
                       ↓
                  Route (Domain)
 
 
-**Importante**: El dominio NO conoce la infraestructura. La inversión de dependencias se logra mediante el puerto `RouteRepositoryPort`.
+El dominio no conoce la infraestructura. La inversión de dependencias se logra mediante RouteRepositoryPort.
 
-
-## Principio de Inversión de Dependencias (DIP)
-
-python
+🔄 Ejemplo de DIP (Dependency Inversion Principle)
 # ❌ INCORRECTO - Dependencia directa
 class RouteService:
     def __init__(self):
@@ -306,16 +218,10 @@ class RouteService:
     def __init__(self, repository: RouteRepositoryPort):
         self._repository = repository  # Depende de abstracción
 
-
-## Autor
+👨‍💻 Autor
 
 Proyecto desarrollado como parte del curso de Arquitectura de Sistemas.
 
-## Licencia
+📄 Licencia
 
 Proyecto educativo - Uso académico.
-#   P R O Y E C T O - F I N A L - A R Q U I T E C T U R A 
- 
- 
-
-

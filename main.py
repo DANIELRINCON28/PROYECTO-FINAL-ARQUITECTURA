@@ -3,7 +3,6 @@ Main Entry Point - Dependency Injection / Assembler
 Este archivo ensambla todas las capas de la arquitectura hexagonal.
 Aquí se realiza la inyección de dependencias.
 """
-import sqlite3
 import sys
 from pathlib import Path
 from typing import Optional
@@ -12,12 +11,16 @@ from typing import Optional
 src_path = Path(__file__).parent / "src"
 sys.path.insert(0, str(src_path))
 
-from src.infrastructure.persistence.sqlite_route_repository import SqliteRouteRepository
+from src.infrastructure.persistence.postgres_route_repository import PostgresRouteRepository
 from src.application.services.route_service import RouteService
 from src.application.services.route_optimization_service import RouteOptimizationService
 from src.infrastructure.services.google_maps_service import GoogleMapsOptimizationService
 from src.infrastructure.ui.streamlit_app import run_ui
 from config import Config
+
+# Cargar variables de entorno desde .env si existe
+from dotenv import load_dotenv
+load_dotenv()
 
 
 def main() -> None:
@@ -50,15 +53,25 @@ def main() -> None:
     print("=" * 60)
     print()
     
-    # 2. Configurar el adaptador de persistencia
-    db_path = Path(__file__).parent / Config.DATABASE_PATH
+    # 2. Configurar el adaptador de persistencia PostgreSQL
+    print(f"📊 Conectando a PostgreSQL: {Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_NAME}")
     
-    print(f"📊 Conectando a la base de datos: {db_path}")
-    db_conn = sqlite3.connect(str(db_path), check_same_thread=False)
-    
-    # Crear el repositorio (Adaptador Conducido)
-    route_repo = SqliteRouteRepository(db_conn)
-    print("✅ Repositorio de rutas inicializado")
+    try:
+        # Obtener parámetros de conexión
+        db_params = Config.get_db_connection_params()
+        
+        # Crear el repositorio (Adaptador Conducido)
+        route_repo = PostgresRouteRepository(db_params)
+        print("✅ Repositorio de rutas inicializado")
+    except Exception as e:
+        print(f"❌ Error al conectar con PostgreSQL: {str(e)}")
+        print("\n💡 Asegúrate de:")
+        print("   1. PostgreSQL está instalado y en ejecución")
+        print("   2. La base de datos 'RutasDB' existe (ejecutar initialize_database.py)")
+        print("   3. Las credenciales en las variables de entorno son correctas")
+        print("\n📝 Configura las variables de entorno:")
+        print("   DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD")
+        return
     
     # 3. Configurar el servicio de optimización (opcional)
     optimization_service: Optional[RouteOptimizationService] = None

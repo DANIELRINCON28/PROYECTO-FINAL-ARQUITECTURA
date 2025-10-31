@@ -11,8 +11,9 @@ googlemaps==4.10.0
 folium==0.15.1
 streamlit-folium==0.15.1
 
-# No se requieren dependencias adicionales para SQLite (viene incluido en Python)
-# No se requiere SQLAlchemy ya que usamos sqlite3 nativo
+# Base de datos PostgreSQL
+psycopg2-binary==2.9.9
+python-dotenv==1.0.0
 
 # Dependencias de desarrollo (opcional)
 pytest==7.4.3

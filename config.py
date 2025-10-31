@@ -26,11 +26,16 @@ class Config:
     CEDIS_LONGITUDE: float = float(os.getenv('CEDIS_LONGITUDE', '-74.0721'))
     CEDIS_ADDRESS: str = os.getenv('CEDIS_ADDRESS', 'Bogotá, Colombia')
     
-    # Base de datos
-    DATABASE_PATH: str = os.getenv(
-        'DATABASE_PATH',
-        'yedistribuciones.db'
-    )
+    # Base de datos PostgreSQL
+    DB_HOST: str = os.getenv('DB_HOST', 'localhost')
+    DB_PORT: str = os.getenv('DB_PORT', '5432')
+    DB_NAME: str = os.getenv('DB_NAME', 'RutasDB')
+    DB_USER: str = os.getenv('DB_USER', 'postgres')
+    DB_PASSWORD: str = os.getenv('DB_PASSWORD', '')
+    
+    # Configuración de pool de conexiones
+    DB_MIN_CONNECTIONS: int = int(os.getenv('DB_MIN_CONNECTIONS', '1'))
+    DB_MAX_CONNECTIONS: int = int(os.getenv('DB_MAX_CONNECTIONS', '10'))
     
     # Límites de ruta (para sugerencias de división)
     MAX_ROUTE_DISTANCE_KM: float = float(os.getenv('MAX_ROUTE_DISTANCE_KM', '100.0'))
@@ -57,6 +62,35 @@ class Config:
         return (cls.CEDIS_LATITUDE, cls.CEDIS_LONGITUDE)
     
     @classmethod
+    def get_database_url(cls) -> str:
+        """
+        Construye la URL de conexión a PostgreSQL.
+        
+        Returns:
+            URL de conexión en formato DSN
+        """
+        return (
+            f"postgresql://{cls.DB_USER}:{cls.DB_PASSWORD}@"
+            f"{cls.DB_HOST}:{cls.DB_PORT}/{cls.DB_NAME}"
+        )
+    
+    @classmethod
+    def get_db_connection_params(cls) -> dict:
+        """
+        Retorna los parámetros de conexión a PostgreSQL.
+        
+        Returns:
+            Diccionario con parámetros de conexión
+        """
+        return {
+            'host': cls.DB_HOST,
+            'port': cls.DB_PORT,
+            'database': cls.DB_NAME,
+            'user': cls.DB_USER,
+            'password': cls.DB_PASSWORD
+        }
+    
+    @classmethod
     def validate_config(cls) -> list[str]:
         """
         Valida la configuración y retorna advertencias si hay problemas.
@@ -77,6 +111,9 @@ class Config:
         
         if cls.MAX_ROUTE_DURATION_HOURS <= 0:
             warnings.append("⚠️ MAX_ROUTE_DURATION_HOURS debe ser mayor a 0")
+        
+        if not cls.DB_PASSWORD:
+            warnings.append("⚠️ DB_PASSWORD no configurada. Se recomienda usar una contraseña segura.")
         
         return warnings
 
@@ -138,7 +175,11 @@ if __name__ == "__main__":
     print(f"CEDIS: {Config.CEDIS_ADDRESS}")
     print(f"  Latitud: {Config.CEDIS_LATITUDE}")
     print(f"  Longitud: {Config.CEDIS_LONGITUDE}")
-    print(f"Base de datos: {Config.DATABASE_PATH}")
+    print(f"Base de datos: PostgreSQL")
+    print(f"  Host: {Config.DB_HOST}")
+    print(f"  Puerto: {Config.DB_PORT}")
+    print(f"  Nombre: {Config.DB_NAME}")
+    print(f"  Usuario: {Config.DB_USER}")
     print(f"Límite distancia: {Config.MAX_ROUTE_DISTANCE_KM} km")
     print(f"Límite duración: {Config.MAX_ROUTE_DURATION_HOURS} horas")
     print("=" * 60)

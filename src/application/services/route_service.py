@@ -51,8 +51,9 @@ class RouteService:
             is_active=True
         )
         
-        # Persistir
+        # Persistir y confirmar
         self._repository.save(route)
+        self._repository.commit_transaction()
         
         # Retornar DTO
         return self._route_to_dto(route)
@@ -78,8 +79,9 @@ class RouteService:
         # Lógica de dominio
         route.add_client(client_id)
         
-        # Persistir cambios
+        # Persistir cambios y confirmar
         self._repository.update(route)
+        self._repository.commit_transaction()
         
         return self._route_to_dto(route)
     
@@ -100,6 +102,7 @@ class RouteService:
         
         route.remove_client(client_id)
         self._repository.update(route)
+        self._repository.commit_transaction()
         
         return self._route_to_dto(route)
     
@@ -124,8 +127,9 @@ class RouteService:
         # Lógica de dominio
         route.reorder_clients(ordered_client_ids)
         
-        # Persistir cambios
+        # Persistir cambios y confirmar
         self._repository.update(route)
+        self._repository.commit_transaction()
         
         return self._route_to_dto(route)
     
@@ -310,6 +314,7 @@ class RouteService:
         
         route.deactivate()
         self._repository.update(route)
+        self._repository.commit_transaction()
         
         return self._route_to_dto(route)
     
@@ -329,6 +334,7 @@ class RouteService:
         
         route.activate()
         self._repository.update(route)
+        self._repository.commit_transaction()
         
         return self._route_to_dto(route)
     

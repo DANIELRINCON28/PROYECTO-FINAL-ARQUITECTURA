@@ -4,6 +4,13 @@
 # Framework de UI
 streamlit==1.31.0
 
+# API de Google Maps
+googlemaps==4.10.0
+
+# Visualización de mapas en Streamlit
+folium==0.15.1
+streamlit-folium==0.15.1
+
 # No se requieren dependencias adicionales para SQLite (viene incluido en Python)
 # No se requiere SQLAlchemy ya que usamos sqlite3 nativo
 

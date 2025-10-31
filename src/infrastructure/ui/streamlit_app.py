@@ -6,15 +6,22 @@ RNF-RUT-01: Interface de usuario simple e intuitiva.
 import streamlit as st
 from typing import Optional
 from src.application.services.route_service import RouteService
+from src.application.services.route_optimization_service import RouteOptimizationService
 from src.application.dtos import CreateRouteDTO
+from src.domain.ports.route_optimization_port import ClientLocation
+from config import Config
 
 
-def run_ui(route_service: RouteService) -> None:
+def run_ui(
+    route_service: RouteService,
+    optimization_service: Optional[RouteOptimizationService] = None
+) -> None:
     """
     Función principal de la aplicación Streamlit.
     
     Args:
         route_service: Servicio de aplicación de rutas (inyectado)
+        optimization_service: Servicio de optimización (opcional)
     """
     st.set_page_config(
         page_title="Yedistribuciones - Gestión de Rutas",
@@ -23,20 +30,33 @@ def run_ui(route_service: RouteService) -> None:
     )
     
     st.title("🚚 Yedistribuciones - Sistema de Gestión de Rutas")
+    
+    # Mostrar estado de optimización
+    if optimization_service:
+        st.success("✅ Optimización de rutas habilitada (Google Maps API)")
+    else:
+        st.info("ℹ️ Optimización deshabilitada. Configura GOOGLE_MAPS_API_KEY para habilitarla.")
+    
     st.markdown("---")
     
     # Menú lateral
-    menu = st.sidebar.selectbox(
-        "Menú Principal",
-        [
-            "📋 Ver Todas las Rutas",
-            "➕ Crear Nueva Ruta",
-            "✏️ Gestionar Clientes en Ruta",
-            "✂️ Dividir Ruta",
-            "🔗 Fusionar Rutas",
-            "🔍 Buscar Ruta por CEDIS/Día"
-        ]
-    )
+    menu_options = [
+        "📋 Ver Todas las Rutas",
+        "➕ Crear Nueva Ruta",
+        "✏️ Gestionar Clientes en Ruta",
+        "✂️ Dividir Ruta",
+        "🔗 Fusionar Rutas",
+        "🔍 Buscar Ruta por CEDIS/Día"
+    ]
+    
+    # Agregar opciones de optimización si está disponible
+    if optimization_service:
+        menu_options.extend([
+            "🗺️ Optimizar Ruta",
+            "📊 Ver Métricas de Ruta"
+        ])
+    
+    menu = st.sidebar.selectbox("Menú Principal", menu_options)
     
     # Enrutamiento de vistas
     if menu == "📋 Ver Todas las Rutas":
@@ -49,6 +69,12 @@ def run_ui(route_service: RouteService) -> None:
         divide_route_view(route_service)
     elif menu == "🔗 Fusionar Rutas":
         merge_routes_view(route_service)
+    elif menu == "🔍 Buscar Ruta por CEDIS/Día":
+        search_route_view(route_service)
+    elif menu == "🗺️ Optimizar Ruta" and optimization_service:
+        optimize_route_view(route_service, optimization_service)
+    elif menu == "📊 Ver Métricas de Ruta" and optimization_service:
+        route_metrics_view(route_service, optimization_service)
     elif menu == "🔍 Buscar Ruta por CEDIS/Día":
         search_routes_view(route_service)
 
@@ -166,7 +192,10 @@ def create_route_view(service: RouteService) -> None:
                     
                     created_route = service.create_route(dto)
                     st.success(f"✅ Ruta '{created_route.name}' creada exitosamente!")
-                    st.info(f"ID de la ruta: {created_route.id}")
+                    st.info(f"📝 ID de la ruta: {created_route.id}")
+                    st.info("🔄 Actualizando vista...")
+                    # Forzar recarga para actualizar todas las vistas en tiempo real
+                    st.rerun()
                     
                 except ValueError as e:
                     st.error(f"Error de validación: {str(e)}")
@@ -331,7 +360,10 @@ def divide_route_view(service: RouteService) -> None:
                             st.success("✅ Ruta dividida exitosamente!")
                             st.info(f"**Ruta A:** {route_a.name} con {route_a.client_count} clientes")
                             st.info(f"**Ruta B:** {route_b.name} con {route_b.client_count} clientes")
-                            st.warning(f"La ruta original '{route.name}' ha sido desactivada")
+                            st.warning(f"⚠️ La ruta original '{route.name}' ha sido desactivada")
+                            st.info("🔄 Actualizando vista...")
+                            # Forzar recarga para actualizar todas las vistas en tiempo real
+                            st.rerun()
                             
                         except ValueError as e:
                             st.error(f"Error: {str(e)}")
@@ -398,7 +430,10 @@ def merge_routes_view(service: RouteService) -> None:
                         st.success("✅ Rutas fusionadas exitosamente!")
                         st.info(f"**Nueva Ruta:** {merged_route.name}")
                         st.info(f"**Total de clientes:** {merged_route.client_count}")
-                        st.warning("Las rutas originales han sido desactivadas")
+                        st.warning("⚠️ Las rutas originales han sido desactivadas")
+                        st.info("🔄 Actualizando vista...")
+                        # Forzar recarga para actualizar todas las vistas en tiempo real
+                        st.rerun()
                         
                     except ValueError as e:
                         st.error(f"Error de validación: {str(e)}")
@@ -409,7 +444,7 @@ def merge_routes_view(service: RouteService) -> None:
         st.error(f"Error: {str(e)}")
 
 
-def search_routes_view(service: RouteService) -> None:
+def search_route_view(service: RouteService) -> None:
     """
     Buscar rutas por CEDIS y día de la semana.
     """
@@ -455,3 +490,225 @@ def search_routes_view(service: RouteService) -> None:
                 
                 except Exception as e:
                     st.error(f"Error en la búsqueda: {str(e)}")
+
+
+def optimize_route_view(
+    route_service: RouteService,
+    optimization_service: RouteOptimizationService
+) -> None:
+    """
+    Vista para optimizar el orden de visita en una ruta.
+    """
+    st.header("🗺️ Optimizar Orden de Ruta")
+    st.markdown("Optimiza el orden de visita usando Google Maps para minimizar distancia y tiempo.")
+    
+    try:
+        # Obtener todas las rutas activas
+        all_routes = route_service.get_all_routes()
+        active_routes = [r for r in all_routes if r.is_active]
+        
+        if not active_routes:
+            st.warning("No hay rutas activas para optimizar")
+            return
+        
+        # Crear diccionario nombre -> id
+        route_options = {r.name: r.route_id for r in active_routes}
+        
+        with st.form("optimize_form"):
+            selected_route_name = st.selectbox(
+                "Seleccionar Ruta",
+                list(route_options.keys())
+            )
+            
+            selected_route_id = route_options[selected_route_name]
+            route_detail = route_service.get_route_by_id(selected_route_id)
+            
+            if route_detail:
+                st.info(f"**Clientes en ruta:** {route_detail.client_count}")
+                
+                # Mostrar clientes actuales
+                with st.expander("Ver orden actual de clientes"):
+                    for idx, client in enumerate(route_detail.clients, 1):
+                        st.text(f"{idx}. {client.name} - {client.address}")
+            
+            submitted = st.form_submit_button("🚀 Optimizar Ruta", use_container_width=True)
+            
+            if submitted:
+                with st.spinner("Optimizando ruta con Google Maps..."):
+                    try:
+                        # Convertir clientes a ClientLocation
+                        client_locations = [
+                            ClientLocation(
+                                client_id=c.client_id,
+                                address=c.address,
+                                latitude=c.latitude,
+                                longitude=c.longitude
+                            )
+                            for c in route_detail.clients
+                        ]
+                        
+                        # Geocodificar direcciones que no tienen coordenadas
+                        geocoded_clients = optimization_service.geocode_clients(client_locations)
+                        
+                        # Optimizar
+                        cedis_location = Config.get_cedis_location()
+                        result = optimization_service.optimize_route_order(
+                            route_id=selected_route_id,
+                            cedis_location=cedis_location,
+                            client_locations=geocoded_clients
+                        )
+                        
+                        st.success("✅ Ruta optimizada exitosamente!")
+                        
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.metric(
+                                "Distancia Total",
+                                f"{result.total_distance_km:.1f} km"
+                            )
+                        
+                        with col2:
+                            st.metric(
+                                "Tiempo Estimado",
+                                f"{result.total_duration_minutes:.0f} min"
+                            )
+                        
+                        # Mostrar orden optimizado
+                        st.subheader("📋 Orden Optimizado de Visita")
+                        
+                        for idx, client_id in enumerate(result.optimized_order, 1):
+                            # Buscar cliente en la lista original
+                            client = next(
+                                (c for c in route_detail.clients if c.client_id == client_id),
+                                None
+                            )
+                            if client:
+                                st.text(f"{idx}. {client.name} - {client.address}")
+                        
+                        # Mensaje informativo
+                        st.info(
+                            "💡 **Nota:** Esta es una sugerencia de optimización. "
+                            "La ruta actual NO ha sido modificada en la base de datos."
+                        )
+                        
+                    except ValueError as e:
+                        st.error(f"Error de validación: {str(e)}")
+                    except Exception as e:
+                        st.error(f"Error al optimizar: {str(e)}")
+    
+    except Exception as e:
+        st.error(f"Error: {str(e)}")
+
+
+def route_metrics_view(
+    route_service: RouteService,
+    optimization_service: RouteOptimizationService
+) -> None:
+    """
+    Vista para ver métricas y analíticas de una ruta.
+    """
+    st.header("📊 Métricas y Analíticas de Ruta")
+    st.markdown("Visualiza métricas reales de distancia, tiempo y sugerencias de optimización.")
+    
+    try:
+        # Obtener todas las rutas activas
+        all_routes = route_service.get_all_routes()
+        active_routes = [r for r in all_routes if r.is_active]
+        
+        if not active_routes:
+            st.warning("No hay rutas activas para analizar")
+            return
+        
+        # Crear diccionario nombre -> id
+        route_options = {r.name: r.route_id for r in active_routes}
+        
+        selected_route_name = st.selectbox(
+            "Seleccionar Ruta",
+            list(route_options.keys())
+        )
+        
+        if st.button("📊 Calcular Métricas", use_container_width=True):
+            with st.spinner("Calculando métricas con Google Maps..."):
+                try:
+                    selected_route_id = route_options[selected_route_name]
+                    route_detail = route_service.get_route_by_id(selected_route_id)
+                    
+                    if not route_detail:
+                        st.error("No se encontró la ruta seleccionada")
+                        return
+                    
+                    # Convertir clientes a ClientLocation
+                    client_locations = [
+                        ClientLocation(
+                            client_id=c.client_id,
+                            address=c.address,
+                            latitude=c.latitude,
+                            longitude=c.longitude
+                        )
+                        for c in route_detail.clients
+                    ]
+                    
+                    # Geocodificar si es necesario
+                    geocoded_clients = optimization_service.geocode_clients(client_locations)
+                    
+                    # Calcular métricas
+                    cedis_location = Config.get_cedis_location()
+                    metrics = optimization_service.calculate_route_metrics(
+                        cedis_location=cedis_location,
+                        client_locations=geocoded_clients
+                    )
+                    
+                    # Mostrar métricas principales
+                    st.subheader("📈 Métricas Actuales")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        st.metric("Distancia Total", f"{metrics['total_distance_km']:.1f} km")
+                    
+                    with col2:
+                        st.metric(
+                            "Tiempo Estimado",
+                            f"{metrics['total_duration_minutes']:.0f} min"
+                        )
+                    
+                    with col3:
+                        st.metric("Clientes con Coordenadas", metrics['clients_count'])
+                    
+                    # Sugerencia de división
+                    st.subheader("💡 Análisis de Eficiencia")
+                    
+                    split_suggestion = optimization_service.suggest_route_split(
+                        route_id=selected_route_id,
+                        max_distance_km=Config.MAX_ROUTE_DISTANCE_KM,
+                        max_duration_hours=Config.MAX_ROUTE_DURATION_HOURS,
+                        cedis_location=cedis_location,
+                        client_locations=geocoded_clients
+                    )
+                    
+                    if split_suggestion['should_split']:
+                        st.warning("⚠️ **Sugerencia:** Esta ruta debería dividirse")
+                        for reason in split_suggestion['reason']:
+                            st.text(f"  • {reason}")
+                        
+                        if split_suggestion['suggested_split_point']:
+                            st.info(
+                                f"💡 Punto de división sugerido: "
+                                f"Cliente #{split_suggestion['suggested_split_point']}"
+                            )
+                    else:
+                        st.success("✅ La ruta está dentro de los límites recomendados")
+                    
+                    # Información adicional
+                    with st.expander("ℹ️ Información Adicional"):
+                        st.text(f"CEDIS: {Config.CEDIS_ADDRESS}")
+                        st.text(f"Límite de distancia: {Config.MAX_ROUTE_DISTANCE_KM} km")
+                        st.text(f"Límite de duración: {Config.MAX_ROUTE_DURATION_HOURS} horas")
+                        st.text(f"Total de clientes en ruta: {route_detail.client_count}")
+                
+                except Exception as e:
+                    st.error(f"Error al calcular métricas: {str(e)}")
+    
+    except Exception as e:
+        st.error(f"Error: {str(e)}")

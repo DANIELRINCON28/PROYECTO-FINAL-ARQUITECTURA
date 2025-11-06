@@ -7,6 +7,15 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+# ⚠️ IMPORTANTE: Configurar Streamlit PRIMERO (antes de cualquier otro import de streamlit)
+import streamlit as st
+st.set_page_config(
+    page_title="Yedistribuciones - Gestión de Rutas",
+    page_icon="🚚",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # Agregar el directorio src al path de Python
 src_path = Path(__file__).parent / "src"
 sys.path.insert(0, str(src_path))
@@ -16,6 +25,7 @@ from src.application.services.route_service import RouteService
 from src.application.services.route_optimization_service import RouteOptimizationService
 from src.infrastructure.services.google_maps_service import GoogleMapsOptimizationService
 from src.infrastructure.ui.streamlit_app import run_ui
+from src.infrastructure.ui.ui_components import inject_custom_css
 from config import Config
 
 
@@ -24,12 +34,16 @@ def main() -> None:
     Función principal que ensambla la aplicación.
     
     Pasos:
-    1. Validar configuración
-    2. Configurar el adaptador de persistencia (SQLite)
-    3. Configurar el servicio de optimización (Google Maps) si está disponible
-    4. Inyectar adaptadores en los servicios de aplicación
-    5. Iniciar el adaptador de UI (Streamlit), pasándole los servicios
+    1. Inyectar CSS personalizado (debe hacerse ANTES de cualquier contenido)
+    2. Validar configuración
+    3. Configurar el adaptador de persistencia (PostgreSQL)
+    4. Configurar el servicio de optimización (Google Maps) si está disponible
+    5. Inyectar adaptadores en los servicios de aplicación
+    6. Iniciar el adaptador de UI (Streamlit), pasándole los servicios
     """
+    
+    # 0. Inyectar CSS personalizado PRIMERO
+    inject_custom_css()
     
     # 1. Validar configuración
     print("=" * 60)

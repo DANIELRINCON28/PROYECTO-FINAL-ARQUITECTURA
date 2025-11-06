@@ -17,6 +17,8 @@ class Client:
     address: str
     phone: Optional[str] = None
     email: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     
     def __post_init__(self) -> None:
         """Validaciones de negocio."""
@@ -26,3 +28,7 @@ class Client:
             raise ValueError("El nombre del cliente es obligatorio")
         if not self.address or not self.address.strip():
             raise ValueError("La dirección del cliente es obligatoria")
+    
+    def has_coordinates(self) -> bool:
+        """Verifica si el cliente tiene coordenadas geográficas."""
+        return self.latitude is not None and self.longitude is not None

@@ -154,21 +154,6 @@ def initialize_database():
             )
         """)
         
-        # 7. Tabla Routes (para compatibilidad con el sistema actual)
-        print("  🛣️  Creando tabla 'routes' (compatibilidad)...")
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS routes (
-                id VARCHAR(100) PRIMARY KEY,
-                name VARCHAR(150) NOT NULL,
-                cedis_id VARCHAR(50) NOT NULL,
-                day_of_week VARCHAR(20) NOT NULL,
-                client_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
-                is_active BOOLEAN NOT NULL DEFAULT TRUE,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
         print("\n📊 Creando índices para optimización...")
         
         # Índices para Rutas
@@ -204,23 +189,6 @@ def initialize_database():
             ON asignaciones_rutas(estado)
         """)
         
-        # Índices para tabla Routes (compatibilidad)
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_routes_cedis_day 
-            ON routes(cedis_id, day_of_week)
-        """)
-        
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_routes_active 
-            ON routes(is_active)
-        """)
-        
-        # Índice JSONB para client_ids
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_routes_client_ids_gin 
-            ON routes USING gin(client_ids)
-        """)
-        
         print("\n🔧 Creando funciones auxiliares...")
         
         # Función para actualizar timestamp automáticamente
@@ -232,15 +200,6 @@ def initialize_database():
                 RETURN NEW;
             END;
             $$ language 'plpgsql';
-        """)
-        
-        # Trigger para actualizar updated_at en routes
-        cursor.execute("""
-            DROP TRIGGER IF EXISTS update_routes_updated_at ON routes;
-            CREATE TRIGGER update_routes_updated_at
-                BEFORE UPDATE ON routes
-                FOR EACH ROW
-                EXECUTE FUNCTION update_updated_at_column();
         """)
         
         # Commit de todos los cambios

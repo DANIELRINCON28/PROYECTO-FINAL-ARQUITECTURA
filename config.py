@@ -4,6 +4,10 @@ Gestiona variables de entorno y configuraciones del sistema.
 """
 import os
 from typing import Optional
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env al inicio
+load_dotenv()
 
 
 class Config:

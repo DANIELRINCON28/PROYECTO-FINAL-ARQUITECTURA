@@ -18,10 +18,6 @@ from src.infrastructure.services.google_maps_service import GoogleMapsOptimizati
 from src.infrastructure.ui.streamlit_app import run_ui
 from config import Config
 
-# Cargar variables de entorno desde .env si existe
-from dotenv import load_dotenv
-load_dotenv()
-
 
 def main() -> None:
     """

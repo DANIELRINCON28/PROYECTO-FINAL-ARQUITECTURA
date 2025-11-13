@@ -172,43 +172,45 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 {% if cedis_distribution %}
+<script id="cedisData" type="application/json">{{ cedis_distribution | tojson | safe }}</script>
 <script>
-    // Chart.js para distribución por CEDIS
-    (function() {
-        const ctx = document.getElementById('cedisChart');
-        if (!ctx) return;
-        
-        const cedisData = {{ cedis_distribution | tojson | safe }};
-        
-        new Chart(ctx.getContext('2d'), {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(cedisData),
-                datasets: [{
-                    label: 'Rutas por CEDIS',
-                    data: Object.values(cedisData),
-                    backgroundColor: [
-                        '#1F4788',
-                        '#4A7BA7',
-                        '#2E8B57',
-                        '#F39C12',
-                        '#E74C3C',
-                        '#3498DB'
-                    ],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                    }
+// Chart.js para distribución por CEDIS
+(function() {
+    var ctx = document.getElementById('cedisChart');
+    if (!ctx) return;
+    
+    var dataElement = document.getElementById('cedisData');
+    var cedisData = dataElement ? JSON.parse(dataElement.textContent) : {};
+    
+    new Chart(ctx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(cedisData),
+            datasets: [{
+                label: 'Rutas por CEDIS',
+                data: Object.values(cedisData),
+                backgroundColor: [
+                    '#1F4788',
+                    '#4A7BA7',
+                    '#2E8B57',
+                    '#F39C12',
+                    '#E74C3C',
+                    '#3498DB'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
                 }
             }
-        });
-    })();
+        }
+    });
+})();
 </script>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Fusionar Rutas - Yedistribuciones{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-5">
+            <i class="fas fa-link text-success"></i> Fusionar Rutas
+        </h1>
+        <p class="text-muted">Combina dos rutas existentes en una sola</p>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-compress-arrows-alt"></i> Configuración de Fusión</h5>
+            </div>
+            <div class="card-body">
+                <form id="mergeForm">
+                    <div class="mb-3">
+                        <label for="route_a_id" class="form-label">
+                            <i class="fas fa-route"></i> Primera Ruta (A) *
+                        </label>
+                        <select class="form-select" id="route_a_id" required>
+                            <option value="" selected disabled>Seleccione la primera ruta</option>
+                            {% for route in routes %}
+                                <option value="{{ route.id }}">
+                                    {{ route.name }} ({{ route.client_count }} clientes)
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="text-center mb-3">
+                        <i class="fas fa-plus-circle fa-2x text-success"></i>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="route_b_id" class="form-label">
+                            <i class="fas fa-route"></i> Segunda Ruta (B) *
+                        </label>
+                        <select class="form-select" id="route_b_id" required>
+                            <option value="" selected disabled>Seleccione la segunda ruta</option>
+                            {% for route in routes %}
+                                <option value="{{ route.id }}">
+                                    {{ route.name }} ({{ route.client_count }} clientes)
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="text-center mb-3">
+                        <i class="fas fa-equals fa-2x text-primary"></i>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="new_name" class="form-label">
+                            <i class="fas fa-tag"></i> Nombre de la Ruta Fusionada *
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="new_name" 
+                               placeholder="Ej: Ruta Norte Completa"
+                               required>
+                        <div class="form-text">
+                            Nombre para identificar la nueva ruta combinada.
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <strong>Importante:</strong> Las rutas originales serán eliminadas después de la fusión.
+                        Los clientes de ambas rutas se combinarán en una sola.
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('routes_list') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-link"></i> Fusionar Rutas
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('mergeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const routeAId = document.getElementById('route_a_id').value;
+    const routeBId = document.getElementById('route_b_id').value;
+    const newName = document.getElementById('new_name').value;
+    
+    if (routeAId === routeBId) {
+        alert('❌ Error: No puede seleccionar la misma ruta dos veces');
+        return;
+    }
+    
+    if (!confirm('¿Está seguro de fusionar estas rutas? Las rutas originales serán eliminadas.')) {
+        return;
+    }
+    
+    fetch('/api/routes/merge', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            route_a_id: routeAId,
+            route_b_id: routeBId,
+            new_name: newName
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Rutas fusionadas exitosamente');
+            window.location.href = '/routes';
+        } else {
+            alert('❌ Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('❌ Error al fusionar rutas: ' + error);
+    });
+});
+</script>
+{% endblock %}

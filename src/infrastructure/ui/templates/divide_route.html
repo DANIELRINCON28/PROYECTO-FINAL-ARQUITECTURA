@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Dividir Ruta - Yedistribuciones{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-5">
+            <i class="fas fa-scissors text-warning"></i> Dividir Ruta
+        </h1>
+        <p class="text-muted">Divide una ruta existente en dos rutas nuevas</p>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-cut"></i> Configuración de División</h5>
+            </div>
+            <div class="card-body">
+                <form id="divideForm">
+                    <div class="mb-3">
+                        <label for="route_id" class="form-label">
+                            <i class="fas fa-route"></i> Seleccionar Ruta a Dividir *
+                        </label>
+                        <select class="form-select" id="route_id" required onchange="loadRouteInfo()">
+                            <option value="" selected disabled>Seleccione una ruta</option>
+                            {% for route in routes %}
+                                {% if route.client_count > 1 %}
+                                    <option value="{{ route.id }}" data-clients="{{ route.client_count }}">
+                                        {{ route.name }} ({{ route.client_count }} clientes)
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div id="divideConfig" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>Clientes en la ruta:</strong> <span id="clientCount">0</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="split_point" class="form-label">
+                                <i class="fas fa-slash"></i> Punto de División *
+                            </label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="split_point" 
+                                   min="1"
+                                   placeholder="Índice donde dividir (1-N)"
+                                   required>
+                            <div class="form-text">
+                                Los clientes desde el inicio hasta este punto irán a la Ruta A.
+                                Los demás irán a la Ruta B.
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name_a" class="form-label">
+                                        <i class="fas fa-tag"></i> Nombre Ruta A *
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="name_a" 
+                                           placeholder="Ej: Ruta Norte - Parte 1"
+                                           required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name_b" class="form-label">
+                                        <i class="fas fa-tag"></i> Nombre Ruta B *
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="name_b" 
+                                           placeholder="Ej: Ruta Norte - Parte 2"
+                                           required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('routes_list') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="fas fa-scissors"></i> Dividir Ruta
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadRouteInfo() {
+    const select = document.getElementById('route_id');
+    const option = select.options[select.selectedIndex];
+    const clientCount = option.getAttribute('data-clients');
+    
+    document.getElementById('clientCount').textContent = clientCount;
+    document.getElementById('split_point').max = clientCount - 1;
+    document.getElementById('divideConfig').style.display = 'block';
+}
+
+document.getElementById('divideForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const routeId = document.getElementById('route_id').value;
+    const splitPoint = parseInt(document.getElementById('split_point').value);
+    const nameA = document.getElementById('name_a').value;
+    const nameB = document.getElementById('name_b').value;
+    
+    fetch('/api/routes/divide', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            route_id: routeId,
+            split_point: splitPoint,
+            name_a: nameA,
+            name_b: nameB
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Ruta dividida exitosamente');
+            window.location.href = '/routes';
+        } else {
+            alert('❌ Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('❌ Error al dividir ruta: ' + error);
+    });
+});
+</script>
+{% endblock %}

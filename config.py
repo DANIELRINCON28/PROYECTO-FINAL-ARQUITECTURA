@@ -45,6 +45,14 @@ class Config:
     MAX_ROUTE_DISTANCE_KM: float = float(os.getenv('MAX_ROUTE_DISTANCE_KM', '100.0'))
     MAX_ROUTE_DURATION_HOURS: float = float(os.getenv('MAX_ROUTE_DURATION_HOURS', '8.0'))
     
+    # Flask Configuration
+    FLASK_PORT: int = int(os.getenv('FLASK_PORT', '5000'))
+    DEBUG: bool = os.getenv('DEBUG', 'True').lower() == 'true'
+    SECRET_KEY: str = os.getenv('SECRET_KEY', 'yedistribuciones-secret-key-change-in-production')
+    
+    # Database type (for information)
+    DB_TYPE: str = 'PostgreSQL'
+    
     @classmethod
     def is_google_maps_enabled(cls) -> bool:
         """

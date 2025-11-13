@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Ruta - Yedistribuciones{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-5">
+            <i class="fas fa-plus-circle text-primary"></i> Crear Nueva Ruta
+        </h1>
+        <p class="text-muted">Complete el formulario para crear una nueva ruta de distribución</p>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Información de la Ruta</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('create_route') }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">
+                            <i class="fas fa-tag"></i> Nombre de la Ruta *
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="name" 
+                               name="name" 
+                               placeholder="Ej: Ruta Norte Bogotá"
+                               required>
+                        <div class="form-text">
+                            Ingrese un nombre descriptivo para identificar la ruta fácilmente.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cedis_id" class="form-label">
+                            <i class="fas fa-warehouse"></i> CEDIS *
+                        </label>
+                        <select class="form-select" id="cedis_id" name="cedis_id" required>
+                            <option value="" selected disabled>Seleccione un CEDIS</option>
+                            {% for cedis in cedis_list %}
+                                <option value="{{ cedis }}">{{ cedis }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            Seleccione el centro de distribución asociado a esta ruta.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="day_of_week" class="form-label">
+                            <i class="fas fa-calendar-day"></i> Día de la Semana *
+                        </label>
+                        <select class="form-select" id="day_of_week" name="day_of_week" required>
+                            <option value="" selected disabled>Seleccione un día</option>
+                            {% for day in days_list %}
+                                <option value="{{ day }}">{{ day }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            Día de la semana en que se ejecutará esta ruta.
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('routes_list') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> Crear Ruta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="card mt-3">
+            <div class="card-body bg-light">
+                <h6><i class="fas fa-info-circle text-info"></i> Información</h6>
+                <ul class="mb-0">
+                    <li>Una vez creada la ruta, podrá asignar clientes desde la vista de detalle.</li>
+                    <li>Los campos marcados con (*) son obligatorios.</li>
+                    <li>Puede editar la información de la ruta posteriormente.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

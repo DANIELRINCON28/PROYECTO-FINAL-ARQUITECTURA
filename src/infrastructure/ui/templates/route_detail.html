@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}{{ route.name }} - Detalle{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="display-5">
+            <i class="fas fa-route text-primary"></i> {{ route.name }}
+        </h1>
+        <p class="text-muted">Información detallada de la ruta</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('routes_list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<!-- Información General -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información General</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="40%"><i class="fas fa-fingerprint"></i> ID:</th>
+                        <td><code>{{ route.id }}</code></td>
+                    </tr>
+                    <tr>
+                        <th><i class="fas fa-tag"></i> Nombre:</th>
+                        <td><strong>{{ route.name }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th><i class="fas fa-warehouse"></i> CEDIS:</th>
+                        <td><span class="badge bg-info">{{ route.cedis_id }}</span></td>
+                    </tr>
+                    <tr>
+                        <th><i class="fas fa-calendar"></i> Día:</th>
+                        <td><span class="badge bg-success">{{ route.day_of_week }}</span></td>
+                    </tr>
+                    <tr>
+                        <th><i class="fas fa-users"></i> Clientes:</th>
+                        <td><span class="badge bg-primary fs-5">{{ route.client_count }}</span></td>
+                    </tr>
+                    <tr>
+                        <th><i class="fas fa-toggle-on"></i> Estado:</th>
+                        <td>
+                            {% if route.is_active %}
+                                <span class="badge bg-success">Activa</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactiva</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-cogs"></i> Acciones Disponibles</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('manage_clients', route_id=route.id) }}" 
+                       class="btn btn-info btn-lg">
+                        <i class="fas fa-users-cog"></i> Gestionar Clientes
+                    </a>
+                    
+                    {% if optimization_enabled and route.client_count > 1 %}
+                    <a href="{{ url_for('optimize_route_page', route_id=route.id) }}" 
+                       class="btn btn-success btn-lg">
+                        <i class="fas fa-route"></i> Optimizar Ruta
+                    </a>
+                    {% endif %}
+                    
+                    <button class="btn btn-warning btn-lg" 
+                            onclick="divideRoute('{{ route.id }}')">
+                        <i class="fas fa-scissors"></i> Dividir Ruta
+                    </button>
+                    
+                    <button class="btn btn-danger btn-lg" 
+                            onclick="deleteRoute('{{ route.id }}')"
+                            {% if route.client_count > 0 %}disabled title="No se puede eliminar una ruta con clientes"{% endif %}>
+                        <i class="fas fa-trash"></i> Eliminar Ruta
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Clientes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-users"></i> Clientes Asignados ({{ route.client_count }})</h5>
+                <a href="{{ url_for('manage_clients', route_id=route.id) }}" class="btn btn-light btn-sm">
+                    <i class="fas fa-plus"></i> Añadir Clientes
+                </a>
+            </div>
+            <div class="card-body">
+                {% if route.client_ids %}
+                    <div class="list-group" id="clientList">
+                        {% for client_id in route.client_ids %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">
+                                        <i class="fas fa-user-circle"></i> Cliente #{{ loop.index }}
+                                    </h6>
+                                    <small class="text-muted">ID: <code>{{ client_id }}</code></small>
+                                </div>
+                                <div>
+                                    <span class="badge bg-primary me-2">Posición {{ loop.index }}</span>
+                                    <button class="btn btn-sm btn-danger" 
+                                            onclick="removeClient('{{ route.id }}', '{{ client_id }}')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i> 
+                        Los clientes se visitan en el orden mostrado. Puede reordenarlos desde "Gestionar Clientes".
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay clientes asignados</h5>
+                        <p class="text-muted">Agregue clientes a esta ruta para comenzar.</p>
+                        <a href="{{ url_for('manage_clients', route_id=route.id) }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-plus-circle"></i> Añadir Primer Cliente
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function removeClient(routeId, clientId) {
+    if (!confirm('¿Está seguro de que desea eliminar este cliente de la ruta?')) {
+        return;
+    }
+    
+    fetch(`/api/routes/${routeId}/clients/${clientId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error al eliminar cliente: ' + error);
+    });
+}
+
+function divideRoute(routeId) {
+    window.location.href = '/routes/divide?route_id=' + routeId;
+}
+
+function deleteRoute(routeId) {
+    if (!confirm('¿Está seguro de que desea eliminar esta ruta? Esta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    alert('Función de eliminación pendiente de implementación');
+}
+</script>
+{% endblock %}

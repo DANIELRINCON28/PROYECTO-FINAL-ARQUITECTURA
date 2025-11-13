@@ -680,6 +680,30 @@ def create_flask_app(
             ]
         })
     
+    @app.route('/api/routes/<route_id>', methods=['DELETE'])
+    @handle_service_error
+    def api_delete_route(route_id: str):
+        """
+        API: Eliminar una ruta.
+        
+        Solo se pueden eliminar rutas sin clientes asignados.
+        """
+        service = get_route_service()
+        
+        try:
+            service.delete_route(route_id)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Ruta eliminada exitosamente'
+            }), 200
+            
+        except ValueError as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 400
+    
     # ========================================================================
     # ERROR HANDLERS
     # ========================================================================

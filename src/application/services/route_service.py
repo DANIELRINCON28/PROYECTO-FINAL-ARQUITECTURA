@@ -457,6 +457,32 @@ class RouteService:
                 'name': f"Cliente {client_id}",
                 'address': "Información no disponible"
             }
+    def delete_route(self, route_id: str) -> None:
+        """
+        RF-RUT-08: Eliminar una ruta.
+        
+        Args:
+            route_id: ID de la ruta a eliminar
+            
+        Raises:
+            ValueError: Si la ruta no existe o tiene clientes asignados
+        """
+        # Obtener la ruta
+        route = self._repository.find_by_id(route_id)
+        if route is None:
+            raise ValueError(f"Ruta {route_id} no encontrada")
+        
+        # Validación de negocio: no eliminar rutas con clientes
+        if route.client_ids and len(route.client_ids) > 0:
+            raise ValueError(
+                f"No se puede eliminar la ruta '{route.name}' porque tiene "
+                f"{len(route.client_ids)} clientes asignados. "
+                "Elimine todos los clientes primero."
+            )
+        
+        # Eliminar la ruta
+        self._repository.delete(route_id)
+        self._repository.commit_transaction()
     
     def _route_to_dto(self, route: Route) -> RouteDTO:
         """

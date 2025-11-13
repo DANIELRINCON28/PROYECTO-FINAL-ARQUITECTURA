@@ -182,7 +182,36 @@ function deleteRoute(routeId) {
         return;
     }
     
-    alert('Función de eliminación pendiente de implementación');
+    // Mostrar indicador de carga
+    const button = event.target.closest('button');
+    const originalHtml = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+    button.disabled = true;
+    
+    fetch(`/api/routes/${routeId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar mensaje de éxito
+            alert('✅ Ruta eliminada exitosamente');
+            // Redirigir a la lista de rutas
+            window.location.href = '/routes';
+        } else {
+            // Mostrar error
+            alert('❌ Error: ' + data.error);
+            // Restaurar botón
+            button.innerHTML = originalHtml;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        alert('❌ Error al eliminar la ruta: ' + error);
+        // Restaurar botón
+        button.innerHTML = originalHtml;
+        button.disabled = false;
+    });
 }
 </script>
 {% endblock %}

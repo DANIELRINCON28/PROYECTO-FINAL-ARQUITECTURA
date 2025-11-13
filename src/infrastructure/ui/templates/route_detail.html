@@ -36,7 +36,7 @@
                     </tr>
                     <tr>
                         <th><i class="fas fa-warehouse"></i> CEDIS:</th>
-                        <td><span class="badge bg-info">{{ route.cedis_id }}</span></td>
+                        <td><span class="badge bg-info">{{ get_cedis_name(route.cedis_id) if get_cedis_name else route.cedis_id }}</span></td>
                     </tr>
                     <tr>
                         <th><i class="fas fa-calendar"></i> Día:</th>

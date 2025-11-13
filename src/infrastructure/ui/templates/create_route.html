@@ -42,8 +42,8 @@
                         </label>
                         <select class="form-select" id="cedis_id" name="cedis_id" required>
                             <option value="" selected disabled>Seleccione un CEDIS</option>
-                            {% for cedis in cedis_list %}
-                                <option value="{{ cedis }}">{{ cedis }}</option>
+                            {% for cedis_id, cedis_name in cedis_list %}
+                                <option value="{{ cedis_id }}">{{ cedis_name }}</option>
                             {% endfor %}
                         </select>
                         <div class="form-text">

@@ -6,7 +6,7 @@ Mantiene la arquitectura hexagonal - capa de infraestructura.
 RNF-RUT-01: Interface de usuario simple, intuitiva y profesional.
 """
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
-from typing import Optional
+from typing import Optional, Dict
 import json
 from functools import wraps
 
@@ -14,6 +14,73 @@ from src.application.services.route_service import RouteService
 from src.application.services.route_optimization_service import RouteOptimizationService
 from src.application.dtos import CreateRouteDTO
 from src.domain.ports.route_optimization_port import ClientLocation
+
+
+# ========================================================================
+# UTILIDADES Y HELPERS
+# ========================================================================
+
+def get_cedis_display_name(cedis_id: str) -> str:
+    """
+    Convierte el ID del CEDIS en un nombre amigable para mostrar.
+    Intenta obtener el nombre real de la BD, si no está disponible usa fallbacks.
+    
+    Args:
+        cedis_id: ID del CEDIS (puede ser string de ID numérico o identificador)
+    
+    Returns:
+        Nombre amigable del CEDIS
+    """
+    try:
+        # Intentar obtener el nombre real de la BD
+        import psycopg2
+        from config import Config
+        
+        conn = psycopg2.connect(
+            host=Config.DB_HOST,
+            port=int(Config.DB_PORT),
+            database=Config.DB_NAME,
+            user=Config.DB_USER,
+            password=Config.DB_PASSWORD
+        )
+        
+        cursor = conn.cursor()
+        
+        # Intentar búsqueda por ID numérico
+        try:
+            cedis_id_int = int(cedis_id)
+            cursor.execute("SELECT nombre FROM cedis WHERE id = %s", (cedis_id_int,))
+        except (ValueError, TypeError):
+            # Si no es numérico, búsqueda por nombre/identificador
+            cursor.execute("SELECT nombre FROM cedis WHERE nombre LIKE %s OR id::text = %s", 
+                         (f"%{cedis_id}%", cedis_id))
+        
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if row:
+            return row[0]
+        
+    except Exception as e:
+        # Si hay error de conexión, usar fallback
+        print(f"⚠️ Warning: No se pudo obtener nombre de CEDIS {cedis_id} desde BD: {e}")
+        pass
+    
+    # Fallback: mapeo hardcodeado para compatibilidad
+    cedis_names = {
+        'CEDIS_BOGOTA': 'CEDIS Bogotá',
+        'CEDIS_MEDELLIN': 'CEDIS Medellín',
+        'CEDIS_CALI': 'CEDIS Cali',
+        'CEDIS_BARRANQUILLA': 'CEDIS Barranquilla',
+        'CEDIS_CARTAGENA': 'CEDIS Cartagena',
+        '13': 'CEDIS Bogotá (13)',
+        '14': 'CEDIS Medellín (14)',
+        '15': 'CEDIS Cali (15)',
+        '16': 'CEDIS Barranquilla (16)',
+        '17': 'CEDIS Cartagena (17)',
+    }
+    return cedis_names.get(str(cedis_id), f'CEDIS {cedis_id}')
 
 
 def create_flask_app(
@@ -56,8 +123,12 @@ def create_flask_app(
             try:
                 return func(*args, **kwargs)
             except ValueError as e:
+                print(f"❌ ValueError en {func.__name__}: {str(e)}")
                 return jsonify({'success': False, 'error': str(e)}), 400
             except Exception as e:
+                import traceback
+                print(f"❌ Error en {func.__name__}: {str(e)}")
+                print(traceback.format_exc())
                 return jsonify({'success': False, 'error': f'Error interno: {str(e)}'}), 500
         return wrapper
     
@@ -77,22 +148,29 @@ def create_flask_app(
             total_routes = len(all_routes) if all_routes else 0
             avg_clients = round(total_clients / total_routes) if total_routes > 0 else 0
             
-            # Distribución por CEDIS
+            # Distribución por CEDIS con nombres amigables
             cedis_distribution = {}
+            cedis_distribution_display = {}
             for route in all_routes:
                 cedis = route.cedis_id
                 if cedis not in cedis_distribution:
                     cedis_distribution[cedis] = 0
                 cedis_distribution[cedis] += 1
             
+            # Convertir a nombres amigables para el gráfico
+            for cedis_id, count in cedis_distribution.items():
+                display_name = get_cedis_display_name(cedis_id)
+                cedis_distribution_display[display_name] = count
+            
             return render_template(
                 'dashboard.html',
                 total_routes=total_routes,
                 total_clients=total_clients,
                 avg_clients=avg_clients,
-                cedis_distribution=cedis_distribution,
+                cedis_distribution=cedis_distribution_display,
                 recent_routes=all_routes[:5] if all_routes else [],
-                optimization_enabled=opt_service is not None
+                optimization_enabled=opt_service is not None,
+                get_cedis_name=get_cedis_display_name
             )
         except Exception as e:
             flash(f'Error al cargar dashboard: {str(e)}', 'error')
@@ -116,8 +194,32 @@ def create_flask_app(
             if day_filter:
                 all_routes = [r for r in all_routes if r.day_of_week == day_filter]
             
-            # Obtener valores únicos para filtros
-            cedis_list = sorted(set(r.cedis_id for r in service.get_all_routes(include_inactive=False)))
+            # Obtener lista de CEDIS directamente de la BD con nombres reales
+            cedis_list = []
+            try:
+                import psycopg2
+                from config import Config
+                
+                conn = psycopg2.connect(
+                    host=Config.DB_HOST,
+                    port=int(Config.DB_PORT),
+                    database=Config.DB_NAME,
+                    user=Config.DB_USER,
+                    password=Config.DB_PASSWORD
+                )
+                
+                cursor = conn.cursor()
+                cursor.execute("SELECT id, nombre FROM cedis ORDER BY nombre")
+                cedis_list = [(str(row[0]), row[1]) for row in cursor.fetchall()]
+                cursor.close()
+                conn.close()
+                
+            except Exception as e:
+                print(f"⚠️ Warning: No se pudo cargar lista de CEDIS: {e}")
+                # Fallback: obtener de las rutas existentes
+                cedis_list_ids = sorted(set(r.cedis_id for r in service.get_all_routes(include_inactive=False)))
+                cedis_list = [(cedis_id, get_cedis_display_name(cedis_id)) for cedis_id in cedis_list_ids]
+            
             days_list = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO']
             
             return render_template(
@@ -126,7 +228,8 @@ def create_flask_app(
                 cedis_list=cedis_list,
                 days_list=days_list,
                 selected_cedis=cedis_filter,
-                selected_day=day_filter
+                selected_day=day_filter,
+                get_cedis_name=get_cedis_display_name
             )
         except Exception as e:
             flash(f'Error al cargar rutas: {str(e)}', 'error')
@@ -162,7 +265,8 @@ def create_flask_app(
                 return redirect(url_for('create_route'))
         
         # GET request
-        cedis_list = ['CEDIS_BOGOTA', 'CEDIS_MEDELLIN', 'CEDIS_CALI', 'CEDIS_BARRANQUILLA']
+        cedis_list_ids = ['CEDIS_BOGOTA', 'CEDIS_MEDELLIN', 'CEDIS_CALI', 'CEDIS_BARRANQUILLA']
+        cedis_list = [(cedis_id, get_cedis_display_name(cedis_id)) for cedis_id in cedis_list_ids]
         days_list = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO']
         
         return render_template(
@@ -175,6 +279,7 @@ def create_flask_app(
     def route_detail(route_id: str):
         """Detalle de una ruta específica."""
         service = get_route_service()
+        opt_service = get_optimization_service()
         
         try:
             route = service.get_route_by_id(route_id)
@@ -182,7 +287,12 @@ def create_flask_app(
                 flash('Ruta no encontrada', 'error')
                 return redirect(url_for('routes_list'))
             
-            return render_template('route_detail.html', route=route)
+            return render_template(
+                'route_detail.html', 
+                route=route,
+                get_cedis_name=get_cedis_display_name,
+                optimization_enabled=opt_service is not None
+            )
         except Exception as e:
             flash(f'Error al cargar ruta: {str(e)}', 'error')
             return redirect(url_for('routes_list'))
@@ -200,11 +310,23 @@ def create_flask_app(
             
             # Obtener todos los clientes disponibles
             all_clients = service.get_available_clients()
+            print(f"📊 DEBUG: Total clientes disponibles cargados: {len(all_clients)}")
+            
+            # Obtener información detallada de los clientes en la ruta
+            route_clients_info = []
+            for client_id in route.client_ids:
+                client_info = service.get_client_info(client_id)
+                route_clients_info.append(client_info)
+            
+            print(f"📊 DEBUG: Clientes en ruta: {len(route_clients_info)}")
+            print(f"📊 DEBUG: IDs en ruta: {route.client_ids}")
             
             return render_template(
                 'manage_clients.html',
                 route=route,
-                available_clients=all_clients
+                available_clients=all_clients,
+                route_clients_info=route_clients_info,
+                get_cedis_name=get_cedis_display_name
             )
         except Exception as e:
             flash(f'Error al cargar clientes: {str(e)}', 'error')

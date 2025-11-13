@@ -25,9 +25,9 @@
                 <label for="cedis" class="form-label">Filtrar por CEDIS</label>
                 <select class="form-select" id="cedis" name="cedis">
                     <option value="">Todos los CEDIS</option>
-                    {% for cedis in cedis_list %}
-                        <option value="{{ cedis }}" {% if selected_cedis == cedis %}selected{% endif %}>
-                            {{ cedis }}
+                    {% for cedis_id, cedis_name in cedis_list %}
+                        <option value="{{ cedis_id }}" {% if selected_cedis == cedis_id %}selected{% endif %}>
+                            {{ cedis_name }}
                         </option>
                     {% endfor %}
                 </select>
@@ -69,7 +69,7 @@
                     <div class="card-body">
                         <p class="mb-2">
                             <strong><i class="fas fa-warehouse"></i> CEDIS:</strong> 
-                            <span class="badge bg-info">{{ route.cedis_id }}</span>
+                            <span class="badge bg-info">{{ get_cedis_name(route.name) }}</span>
                         </p>
                         <p class="mb-2">
                             <strong><i class="fas fa-calendar"></i> Día:</strong> 

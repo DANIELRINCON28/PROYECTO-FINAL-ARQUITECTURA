@@ -33,26 +33,29 @@
                 <div id="availableClients" class="list-group">
                     {% if available_clients %}
                         {% for client in available_clients %}
-                            {% if client.id not in route.client_ids %}
-                                <div class="list-group-item list-group-item-action client-item" 
-                                     data-client-id="{{ client.id }}">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="mb-1">{{ client.name }}</h6>
-                                            <small class="text-muted">
-                                                <i class="fas fa-map-marker-alt"></i> {{ client.address }}
-                                            </small>
-                                        </div>
-                                        <button class="btn btn-sm btn-success" 
-                                                onclick="addClientToRoute('{{ route.id }}', '{{ client.id }}')">
-                                            <i class="fas fa-plus"></i>
-                                        </button>
+                            <div class="list-group-item list-group-item-action client-item" 
+                                 data-client-id="{{ client.id }}"
+                                 data-client-name="{{ client.name }}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ client.name }}</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-map-marker-alt"></i> {{ client.address }}
+                                        </small>
                                     </div>
+                                    <button class="btn btn-sm btn-success" 
+                                            onclick="addClientToRoute('{{ route.id }}', '{{ client.id }}')">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
                                 </div>
-                            {% endif %}
+                            </div>
                         {% endfor %}
                     {% else %}
-                        <p class="text-muted text-center py-3">No hay clientes disponibles</p>
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                            No hay clientes sin asignar.<br>
+                            <small>Todos los clientes ya están en rutas.</small>
+                        </p>
                     {% endif %}
                 </div>
             </div>
@@ -68,24 +71,31 @@
                 </h5>
             </div>
             <div class="card-body" style="max-height: 600px; overflow-y: auto;">
-                <div id="routeClients" class="list-group">
-                    {% if route.client_ids %}
-                        {% for client_id in route.client_ids %}
-                            <div class="list-group-item" data-client-id="{{ client_id }}">
+                <div id="routeClients" class="list-group sortable-list">
+                    {% if route_clients_info %}
+                        {% for client in route_clients_info %}
+                            <div class="list-group-item client-item-sortable" data-client-id="{{ client.id }}" draggable="true">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <div>
+                                    <div class="d-flex align-items-center flex-grow-1">
+                                        <i class="fas fa-grip-vertical text-muted me-2" style="cursor: grab;"></i>
                                         <span class="badge bg-secondary me-2">{{ loop.index }}</span>
-                                        <strong>Cliente: {{ client_id }}</strong>
+                                        <div>
+                                            <strong>{{ client.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                <i class="fas fa-map-marker-alt"></i> {{ client.address }}
+                                            </small>
+                                        </div>
                                     </div>
                                     <button class="btn btn-sm btn-danger" 
-                                            onclick="removeClientFromRoute('{{ route.id }}', '{{ client_id }}')">
+                                            onclick="removeClientFromRoute('{{ route.id }}', '{{ client.id }}')">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
                             </div>
                         {% endfor %}
                     {% else %}
-                        <p class="text-muted text-center py-5">
+                        <p class="text-muted text-center py-5" id="emptyMessage">
                             <i class="fas fa-user-slash fa-2x mb-2"></i><br>
                             No hay clientes en esta ruta
                         </p>
@@ -95,8 +105,14 @@
                 {% if route.client_count > 1 %}
                 <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle"></i> 
-                    Arrastre los clientes para reordenarlos
+                    <strong>Tip:</strong> Arrastre los clientes (usando <i class="fas fa-grip-vertical"></i>) para reordenarlos
                 </div>
+                {% endif %}
+                
+                {% if route.client_count > 0 %}
+                <button id="saveOrderBtn" class="btn btn-success w-100 mt-2" style="display:none;" onclick="saveOrder()">
+                    <i class="fas fa-save"></i> Guardar Orden
+                </button>
                 {% endif %}
             </div>
         </div>
@@ -106,7 +122,121 @@
 {% endblock %}
 
 {% block extra_js %}
+<style>
+.client-item-sortable {
+    cursor: move;
+    transition: all 0.2s;
+}
+
+.client-item-sortable:hover {
+    background-color: #f8f9fa;
+}
+
+.client-item-sortable.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.sortable-list {
+    min-height: 50px;
+}
+</style>
+
 <script>
+const routeId = '{{ route.id }}';
+let orderChanged = false;
+
+// ========================================================================
+// DRAG AND DROP FUNCTIONALITY
+// ========================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const sortableList = document.getElementById('routeClients');
+    const items = sortableList.querySelectorAll('.client-item-sortable');
+    
+    items.forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragend', handleDragEnd);
+        item.addEventListener('dragover', handleDragOver);
+        item.addEventListener('drop', handleDrop);
+        item.addEventListener('dragenter', handleDragEnter);
+        item.addEventListener('dragleave', handleDragLeave);
+    });
+});
+
+let draggedElement = null;
+
+function handleDragStart(e) {
+    draggedElement = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+}
+
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    
+    // Remover todas las clases de drag-over
+    document.querySelectorAll('.client-item-sortable').forEach(item => {
+        item.style.borderTop = '';
+    });
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDragEnter(e) {
+    if (this !== draggedElement) {
+        this.style.borderTop = '3px solid #1F4788';
+    }
+}
+
+function handleDragLeave(e) {
+    this.style.borderTop = '';
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    
+    if (draggedElement !== this) {
+        // Obtener el contenedor padre
+        const container = this.parentNode;
+        
+        // Insertar el elemento arrastrado antes de este elemento
+        container.insertBefore(draggedElement, this);
+        
+        // Actualizar los números de orden
+        updateOrderNumbers();
+        
+        // Mostrar botón de guardar
+        document.getElementById('saveOrderBtn').style.display = 'block';
+        orderChanged = true;
+    }
+    
+    return false;
+}
+
+function updateOrderNumbers() {
+    const items = document.querySelectorAll('.client-item-sortable');
+    items.forEach((item, index) => {
+        const badge = item.querySelector('.badge');
+        if (badge) {
+            badge.textContent = index + 1;
+        }
+    });
+}
+
+// ========================================================================
+// API FUNCTIONS
+// ========================================================================
+
 function addClientToRoute(routeId, clientId) {
     fetch(`/api/routes/${routeId}/clients`, {
         method: 'POST',
@@ -147,6 +277,37 @@ function removeClientFromRoute(routeId, clientId) {
     });
 }
 
+function saveOrder() {
+    const items = document.querySelectorAll('.client-item-sortable');
+    const clientIds = Array.from(items).map(item => item.getAttribute('data-client-id'));
+    
+    if (clientIds.length === 0) {
+        alert('No hay clientes para reordenar');
+        return;
+    }
+    
+    fetch(`/api/routes/${routeId}/reorder`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ client_ids: clientIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Orden guardado exitosamente');
+            document.getElementById('saveOrderBtn').style.display = 'none';
+            orderChanged = false;
+        } else {
+            alert('❌ Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('❌ Error al guardar orden: ' + error);
+    });
+}
+
 function filterClients(type) {
     const input = document.getElementById('search' + (type === 'available' ? 'Available' : 'Route'));
     const filter = input.value.toUpperCase();
@@ -162,5 +323,14 @@ function filterClients(type) {
         }
     }
 }
+
+// Advertir si hay cambios sin guardar
+window.addEventListener('beforeunload', function(e) {
+    if (orderChanged) {
+        e.preventDefault();
+        e.returnValue = '¿Seguro que desea salir? Hay cambios sin guardar.';
+        return e.returnValue;
+    }
+});
 </script>
 {% endblock %}

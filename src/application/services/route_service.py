@@ -338,6 +338,152 @@ class RouteService:
         
         return self._route_to_dto(route)
     
+    def get_available_clients(self) -> List:
+        """
+        Obtiene la lista de clientes disponibles que NO están asignados a ninguna ruta.
+        
+        Returns:
+            Lista de clientes sin asignación de ruta
+        """
+        from src.domain.models.client import Client
+        
+        try:
+            # Obtener clientes reales desde la base de datos
+            import psycopg2
+            from config import Config
+            
+            conn = psycopg2.connect(
+                host=Config.DB_HOST,
+                port=int(Config.DB_PORT),
+                database=Config.DB_NAME,
+                user=Config.DB_USER,
+                password=Config.DB_PASSWORD
+            )
+            
+            cursor = conn.cursor()
+            
+            # Query que excluye clientes ya asignados a rutas
+            cursor.execute("""
+                SELECT c.id, c.nombre_comercial, c.direccion
+                FROM clientes c
+                LEFT JOIN rutas_clientes rc ON c.id = rc.cliente_id
+                WHERE rc.cliente_id IS NULL
+                ORDER BY c.nombre_comercial
+                LIMIT 100
+            """)
+            
+            print(f"📊 DEBUG get_available_clients: Query ejecutada (excluye clientes en rutas)")
+            
+            rows = cursor.fetchall()
+            print(f"📊 DEBUG get_available_clients: {len(rows)} clientes SIN RUTA obtenidos de BD")
+            
+            clients = []
+            for row in rows:
+                client = Client(
+                    id=str(row[0]),  # Convertir ID numérico a string
+                    name=row[1],
+                    address=row[2] if row[2] else "Sin dirección",
+                    phone="",
+                    email=""
+                )
+                clients.append(client)
+                print(f"  ✅ Cliente disponible: ID={client.id}, Nombre={client.name}")
+            
+            cursor.close()
+            conn.close()
+            
+            print(f"✅ get_available_clients: Retornando {len(clients)} clientes disponibles")
+            return clients
+            
+        except Exception as e:
+            # En caso de error, log y retornar lista vacía
+            import traceback
+            print(f"⚠️ Warning: No se pudieron cargar clientes desde BD: {e}")
+            print(traceback.format_exc())
+            return []
+    
+    def get_client_info(self, client_id: str) -> dict:
+        """
+        Obtiene información de un cliente específico desde la base de datos.
+        
+        Args:
+            client_id: ID del cliente
+            
+        Returns:
+            Diccionario con información del cliente
+        """
+        try:
+            import psycopg2
+            from config import Config
+            
+            conn = psycopg2.connect(
+                host=Config.DB_HOST,
+                port=int(Config.DB_PORT),
+                database=Config.DB_NAME,
+                user=Config.DB_USER,
+                password=Config.DB_PASSWORD
+            )
+            
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, nombre_comercial, direccion
+                FROM clientes
+                WHERE id = %s
+            """, (int(client_id),))
+            
+            row = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            
+            if row:
+                return {
+                    'id': str(row[0]),
+                    'name': row[1],
+                    'address': row[2] if row[2] else "Sin dirección"
+                }
+            else:
+                return {
+                    'id': client_id,
+                    'name': f"Cliente {client_id}",
+                    'address': "Información no disponible"
+                }
+                
+        except Exception as e:
+            import traceback
+            print(f"⚠️ Warning: Error al obtener info de cliente {client_id}: {e}")
+            print(traceback.format_exc())
+            return {
+                'id': client_id,
+                'name': f"Cliente {client_id}",
+                'address': "Información no disponible"
+            }
+    def delete_route(self, route_id: str) -> None:
+        """
+        RF-RUT-08: Eliminar una ruta.
+        
+        Args:
+            route_id: ID de la ruta a eliminar
+            
+        Raises:
+            ValueError: Si la ruta no existe o tiene clientes asignados
+        """
+        # Obtener la ruta
+        route = self._repository.find_by_id(route_id)
+        if route is None:
+            raise ValueError(f"Ruta {route_id} no encontrada")
+        
+        # Validación de negocio: no eliminar rutas con clientes
+        if route.client_ids and len(route.client_ids) > 0:
+            raise ValueError(
+                f"No se puede eliminar la ruta '{route.name}' porque tiene "
+                f"{len(route.client_ids)} clientes asignados. "
+                "Elimine todos los clientes primero."
+            )
+        
+        # Eliminar la ruta
+        self._repository.delete(route_id)
+        self._repository.commit_transaction()
+    
     def _route_to_dto(self, route: Route) -> RouteDTO:
         """
         Convierte una entidad de dominio Route a un DTO.

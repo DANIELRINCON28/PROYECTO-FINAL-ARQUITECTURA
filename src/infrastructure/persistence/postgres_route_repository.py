@@ -97,12 +97,24 @@ class PostgresRouteRepository(RouteRepositoryPort):
                 
                 # Insertar los clientes asociados
                 for orden, client_id in enumerate(route.client_ids, 1):
+                    # Convertir client_id a entero de forma segura
+                    try:
+                        cliente_id_int = int(client_id)
+                    except (ValueError, TypeError):
+                        raise ValueError(f"ID de cliente inválido: {client_id}. Debe ser un número.")
+                    
+                    # Verificar que el cliente existe en la BD antes de insertar
+                    cursor.execute("SELECT 1 FROM clientes WHERE id = %(cliente_id)s", 
+                                 {'cliente_id': cliente_id_int})
+                    if cursor.fetchone() is None:
+                        raise ValueError(f"El cliente con ID {cliente_id_int} no existe en la base de datos.")
+                    
                     cursor.execute("""
                         INSERT INTO rutas_clientes (ruta_id, cliente_id, orden_visita)
                         VALUES (%(ruta_id)s, %(cliente_id)s, %(orden)s)
                     """, {
                         'ruta_id': ruta_id,
-                        'cliente_id': int(client_id) if isinstance(client_id, str) and client_id.isdigit() else 0,
+                        'cliente_id': cliente_id_int,
                         'orden': orden
                     })
                 
@@ -161,12 +173,24 @@ class PostgresRouteRepository(RouteRepositoryPort):
                 
                 # Insertar nuevos clientes
                 for orden, client_id in enumerate(route.client_ids, 1):
+                    # Convertir client_id a entero de forma segura
+                    try:
+                        cliente_id_int = int(client_id)
+                    except (ValueError, TypeError):
+                        raise ValueError(f"ID de cliente inválido: {client_id}. Debe ser un número.")
+                    
+                    # Verificar que el cliente existe en la BD antes de insertar
+                    cursor.execute("SELECT 1 FROM clientes WHERE id = %(cliente_id)s", 
+                                 {'cliente_id': cliente_id_int})
+                    if cursor.fetchone() is None:
+                        raise ValueError(f"El cliente con ID {cliente_id_int} no existe en la base de datos.")
+                    
                     cursor.execute("""
                         INSERT INTO rutas_clientes (ruta_id, cliente_id, orden_visita)
                         VALUES (%(ruta_id)s, %(cliente_id)s, %(orden)s)
                     """, {
                         'ruta_id': ruta_id,
-                        'cliente_id': int(client_id) if isinstance(client_id, str) and client_id.isdigit() else 0,
+                        'cliente_id': cliente_id_int,
                         'orden': orden
                     })
                 

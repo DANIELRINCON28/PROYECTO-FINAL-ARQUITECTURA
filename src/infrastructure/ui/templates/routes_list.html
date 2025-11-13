@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Rutas - Yedistribuciones{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="display-5">
+            <i class="fas fa-list text-primary"></i> Gestión de Rutas
+        </h1>
+        <p class="text-muted">Visualiza y administra todas las rutas del sistema</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('create_route') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus-circle"></i> Nueva Ruta
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{{ url_for('routes_list') }}" class="row g-3">
+            <div class="col-md-4">
+                <label for="cedis" class="form-label">Filtrar por CEDIS</label>
+                <select class="form-select" id="cedis" name="cedis">
+                    <option value="">Todos los CEDIS</option>
+                    {% for cedis_id, cedis_name in cedis_list %}
+                        <option value="{{ cedis_id }}" {% if selected_cedis == cedis_id %}selected{% endif %}>
+                            {{ cedis_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="day" class="form-label">Filtrar por Día</label>
+                <select class="form-select" id="day" name="day">
+                    <option value="">Todos los días</option>
+                    {% for day in days_list %}
+                        <option value="{{ day }}" {% if selected_day == day %}selected{% endif %}>
+                            {{ day }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+                <a href="{{ url_for('routes_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Rutas -->
+<div class="row">
+    {% if routes %}
+        {% for route in routes %}
+            <div class="col-md-4 mb-4">
+                <div class="card route-card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-route"></i> {{ route.name }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            <strong><i class="fas fa-warehouse"></i> CEDIS:</strong> 
+                            <span class="badge bg-info">{{ get_cedis_name(route.cedis_id) }}</span>
+                        </p>
+                        <p class="mb-2">
+                            <strong><i class="fas fa-calendar"></i> Día:</strong> 
+                            <span class="badge bg-success">{{ route.day_of_week }}</span>
+                        </p>
+                        <p class="mb-2">
+                            <strong><i class="fas fa-users"></i> Clientes:</strong> 
+                            <span class="badge bg-secondary">{{ route.client_count }}</span>
+                        </p>
+                        <p class="mb-0">
+                            <strong><i class="fas fa-toggle-on"></i> Estado:</strong> 
+                            {% if route.is_active %}
+                                <span class="badge bg-success">Activa</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactiva</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('route_detail', route_id=route.id) }}" 
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i> Ver Detalle
+                            </a>
+                            <a href="{{ url_for('manage_clients', route_id=route.id) }}" 
+                               class="btn btn-sm btn-info">
+                                <i class="fas fa-users-cog"></i> Clientes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info text-center" role="alert">
+                <i class="fas fa-info-circle fa-3x mb-3"></i>
+                <h4>No se encontraron rutas</h4>
+                <p>No hay rutas que coincidan con los filtros seleccionados.</p>
+                <a href="{{ url_for('create_route') }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Crear Primera Ruta
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

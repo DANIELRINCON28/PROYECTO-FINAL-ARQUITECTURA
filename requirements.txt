@@ -1,15 +1,12 @@
 # Yedistribuciones - Gestión de Rutas
 # Dependencias del proyecto
 
-# Framework de UI
-streamlit==1.31.0
+# Framework de UI - Flask (Migrado de Streamlit)
+Flask==3.0.0
+Werkzeug==3.0.1
 
 # API de Google Maps
 googlemaps==4.10.0
-
-# Visualización de mapas en Streamlit
-folium==0.15.1
-streamlit-folium==0.15.1
 
 # Base de datos PostgreSQL
 psycopg2-binary==2.9.9
@@ -20,3 +17,8 @@ pytest==7.4.3
 pytest-cov==4.1.0
 black==23.12.1
 mypy==1.8.0
+
+# LEGACY - Streamlit (mantener para referencia)
+# streamlit==1.31.0
+# folium==0.15.1
+# streamlit-folium==0.15.1

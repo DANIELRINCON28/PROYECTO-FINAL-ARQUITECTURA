@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Optimizar Ruta - {{ route.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="display-5">
+            <i class="fas fa-route text-success"></i> Optimizar Ruta
+        </h1>
+        <p class="text-muted">Ruta: <strong>{{ route.name }}</strong></p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('route_detail', route_id=route.id) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-cogs"></i> Configuración de Optimización</h5>
+            </div>
+            <div class="card-body">
+                <form id="optimizeForm">
+                    <div class="mb-3">
+                        <label for="origin" class="form-label">
+                            <i class="fas fa-map-marker-alt"></i> Punto de Origen *
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="origin" 
+                               placeholder="Ej: CEDIS Bogotá, Calle 123"
+                               required>
+                        <div class="form-text">
+                            Dirección desde donde inicia la ruta.
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Clientes en la ruta:</strong> {{ route.client_count }}<br>
+                        El algoritmo optimizará el orden de visita para minimizar distancia y tiempo.
+                    </div>
+
+                    <div id="optimizationResult" style="display: none;">
+                        <div class="alert alert-success">
+                            <h5><i class="fas fa-check-circle"></i> Optimización Completada</h5>
+                            <hr>
+                            <p><strong>Distancia Original:</strong> <span id="originalDistance"></span> km</p>
+                            <p><strong>Distancia Optimizada:</strong> <span id="optimizedDistance"></span> km</p>
+                            <p><strong>Ahorro de Distancia:</strong> <span id="savedDistance"></span> km</p>
+                            <p><strong>Tiempo Ahorrado:</strong> <span id="savedTime"></span> minutos</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('route_detail', route_id=route.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-route"></i> Optimizar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-body bg-light">
+                <h6><i class="fas fa-lightbulb text-warning"></i> ¿Cómo funciona?</h6>
+                <ul class="mb-0">
+                    <li>Utiliza Google Maps para calcular distancias reales</li>
+                    <li>Encuentra el orden óptimo de visita</li>
+                    <li>Considera tráfico y condiciones de ruta</li>
+                    <li>Minimiza tiempo y distancia total</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('optimizeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const origin = document.getElementById('origin').value;
+    const routeId = '{{ route.id }}';
+    
+    // Aquí necesitarías obtener los datos de los clientes con sus direcciones
+    // Por simplicidad, mostramos un mensaje
+    
+    alert('⚙️ Optimización iniciada. Esta funcionalidad requiere datos de ubicación de clientes.');
+    
+    // Ejemplo de llamada (requiere datos reales de clientes):
+    /*
+    fetch(`/api/routes/${routeId}/optimize`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            origin: origin,
+            clients: [] // Array de clientes con direcciones
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('originalDistance').textContent = data.data.original_distance_km;
+            document.getElementById('optimizedDistance').textContent = data.data.optimized_distance_km;
+            document.getElementById('savedDistance').textContent = data.data.distance_saved_km;
+            document.getElementById('savedTime').textContent = data.data.time_saved_minutes;
+            document.getElementById('optimizationResult').style.display = 'block';
+        } else {
+            alert('❌ Error: ' + data.error);
+        }
+    });
+    */
+});
+</script>
+{% endblock %}

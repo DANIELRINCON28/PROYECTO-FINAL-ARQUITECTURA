@@ -8,6 +8,9 @@ Werkzeug==3.0.1
 # API de Google Maps
 googlemaps==4.10.0
 
+# Optimización de Rutas - Google OR-Tools (TSP Solver)
+ortools==9.8.3296
+
 # Base de datos PostgreSQL
 psycopg2-binary==2.9.9
 python-dotenv==1.0.0

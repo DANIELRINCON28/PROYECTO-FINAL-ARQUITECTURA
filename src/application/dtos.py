@@ -55,3 +55,25 @@ class ReorderClientsDTO:
     """DTO para reordenar clientes en una ruta."""
     route_id: str
     ordered_client_ids: List[str]
+
+
+@dataclass
+class OptimizeRouteDTO:
+    """DTO para solicitar optimización de una ruta."""
+    route_id: str
+    cedis_latitude: float
+    cedis_longitude: float
+    optimization_strategy: str = "distance"  # "distance", "duration" o "balanced"
+
+
+@dataclass
+class OptimizedRouteResultDTO:
+    """DTO para retornar el resultado de una optimización."""
+    route_id: str
+    original_client_order: List[str]
+    optimized_client_order: List[str]
+    total_distance_km: float
+    total_duration_minutes: float
+    distance_saved_km: float
+    success: bool
+    message: str

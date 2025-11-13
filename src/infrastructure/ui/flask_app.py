@@ -310,9 +310,53 @@ def create_flask_app(
                 flash('Ruta no encontrada', 'error')
                 return redirect(url_for('routes_list'))
             
+            # Obtener información de clientes (ID y nombre comercial)
+            clients_info = []
+            if route.client_ids:
+                try:
+                    import psycopg2
+                    from config import Config
+                    
+                    conn = psycopg2.connect(
+                        host=Config.DB_HOST,
+                        port=int(Config.DB_PORT),
+                        database=Config.DB_NAME,
+                        user=Config.DB_USER,
+                        password=Config.DB_PASSWORD
+                    )
+                    
+                    cursor = conn.cursor()
+                    
+                    for client_id in route.client_ids:
+                        cursor.execute(
+                            "SELECT id, nombre_comercial FROM clientes WHERE id = %s",
+                            (int(client_id),)
+                        )
+                        row = cursor.fetchone()
+                        if row:
+                            clients_info.append({
+                                'id': row[0],
+                                'nombre': row[1]
+                            })
+                        else:
+                            # Fallback si el cliente no existe
+                            clients_info.append({
+                                'id': client_id,
+                                'nombre': f'Cliente {client_id}'
+                            })
+                    
+                    cursor.close()
+                    conn.close()
+                    
+                except Exception as e:
+                    print(f"⚠️ Warning: No se pudieron cargar nombres de clientes: {e}")
+                    # Fallback: solo usar IDs
+                    clients_info = [{'id': cid, 'nombre': f'Cliente {cid}'} for cid in route.client_ids]
+            
             return render_template(
                 'route_detail.html', 
                 route=route,
+                clients_info=clients_info,
                 get_cedis_name=get_cedis_display_name,
                 optimization_enabled=opt_service is not None
             )

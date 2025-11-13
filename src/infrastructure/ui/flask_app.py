@@ -264,9 +264,32 @@ def create_flask_app(
                 flash(f'Error al crear ruta: {str(e)}', 'error')
                 return redirect(url_for('create_route'))
         
-        # GET request
-        cedis_list_ids = ['CEDIS_BOGOTA', 'CEDIS_MEDELLIN', 'CEDIS_CALI', 'CEDIS_BARRANQUILLA']
-        cedis_list = [(cedis_id, get_cedis_display_name(cedis_id)) for cedis_id in cedis_list_ids]
+        # GET request - Obtener CEDIS reales de la BD
+        cedis_list = []
+        try:
+            import psycopg2
+            from config import Config
+            
+            conn = psycopg2.connect(
+                host=Config.DB_HOST,
+                port=int(Config.DB_PORT),
+                database=Config.DB_NAME,
+                user=Config.DB_USER,
+                password=Config.DB_PASSWORD
+            )
+            
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, nombre FROM cedis ORDER BY nombre")
+            cedis_list = [(str(row[0]), row[1]) for row in cursor.fetchall()]
+            cursor.close()
+            conn.close()
+            
+        except Exception as e:
+            print(f"⚠️ Warning: No se pudo cargar CEDIS de la BD: {e}")
+            # Fallback con IDs hardcodeados (por si la BD no está disponible)
+            cedis_list_ids = ['CEDIS_BOGOTA', 'CEDIS_MEDELLIN', 'CEDIS_CALI', 'CEDIS_BARRANQUILLA']
+            cedis_list = [(cedis_id, get_cedis_display_name(cedis_id)) for cedis_id in cedis_list_ids]
+        
         days_list = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO']
         
         return render_template(
